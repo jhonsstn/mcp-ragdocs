@@ -117,11 +117,9 @@ Add this to your `cline_mcp_settings.json`:
         "-e",
         "OLLAMA_HOST=http://ollama:11434",
         "--network",
-        "ragdocs_network",
+        "mcp-ragdocs_ragdocs_network",
         "ragdocs"
-      ],
-      "disabled": false,
-      "alwaysAllow": []
+      ]
     }
   }
 }
