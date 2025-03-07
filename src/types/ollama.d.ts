@@ -1,4 +1,4 @@
-declare module 'ollama' {
+declare module "ollama" {
   export interface EmbeddingsRequest {
     model: string;
     prompt: string;
@@ -9,9 +9,11 @@ declare module 'ollama' {
     embedding: number[];
   }
 
-  const ollama: {
+  export class Ollama {
+    constructor(options?: { host?: string });
     embeddings(request: EmbeddingsRequest): Promise<EmbeddingsResponse>;
-  };
+  }
 
+  const ollama: Ollama;
   export default ollama;
 }

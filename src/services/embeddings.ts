@@ -1,6 +1,6 @@
-import ollama from 'ollama';
-import OpenAI from 'openai';
-import { McpError, ErrorCode } from '@modelcontextprotocol/sdk/types.js';
+import { ErrorCode, McpError } from "@modelcontextprotocol/sdk/types.js";
+import { Ollama } from "ollama";
+import OpenAI from "openai";
 
 export interface EmbeddingProvider {
   generateEmbeddings(text: string): Promise<number[]>;
@@ -10,21 +10,32 @@ export interface EmbeddingProvider {
 export class OllamaProvider implements EmbeddingProvider {
   private model: string;
 
-  constructor(model: string = 'nomic-embed-text') {
+  private ollama: Ollama;
+
+  constructor(model: string = "nomic-embed-text") {
     this.model = model;
+    this.ollama = new Ollama({
+      host: process.env.OLLAMA_HOST || "http://localhost:11434",
+    });
   }
 
   async generateEmbeddings(text: string): Promise<number[]> {
     try {
-      console.error('Generating Ollama embeddings for text:', text.substring(0, 50) + '...');
-      const response = await ollama.embeddings({
+      console.error(
+        "Generating Ollama embeddings for text:",
+        text.substring(0, 50) + "..."
+      );
+      const response = await this.ollama.embeddings({
         model: this.model,
-        prompt: text
+        prompt: text,
       });
-      console.error('Successfully generated Ollama embeddings with size:', response.embedding.length);
+      console.error(
+        "Successfully generated Ollama embeddings with size:",
+        response.embedding.length
+      );
       return response.embedding;
     } catch (error) {
-      console.error('Ollama embedding error:', error);
+      console.error("Ollama embedding error:", error);
       throw new McpError(
         ErrorCode.InternalError,
         `Failed to generate embeddings with Ollama: ${error}`
@@ -42,23 +53,29 @@ export class OpenAIProvider implements EmbeddingProvider {
   private client: OpenAI;
   private model: string;
 
-  constructor(apiKey: string, model: string = 'text-embedding-3-small') {
+  constructor(apiKey: string, model: string = "text-embedding-3-small") {
     this.client = new OpenAI({ apiKey });
     this.model = model;
   }
 
   async generateEmbeddings(text: string): Promise<number[]> {
     try {
-      console.error('Generating OpenAI embeddings for text:', text.substring(0, 50) + '...');
+      console.error(
+        "Generating OpenAI embeddings for text:",
+        text.substring(0, 50) + "..."
+      );
       const response = await this.client.embeddings.create({
         model: this.model,
         input: text,
       });
       const embedding = response.data[0].embedding;
-      console.error('Successfully generated OpenAI embeddings with size:', embedding.length);
+      console.error(
+        "Successfully generated OpenAI embeddings with size:",
+        embedding.length
+      );
       return embedding;
     } catch (error) {
-      console.error('OpenAI embedding error:', error);
+      console.error("OpenAI embedding error:", error);
       throw new McpError(
         ErrorCode.InternalError,
         `Failed to generate embeddings with OpenAI: ${error}`
@@ -76,7 +93,10 @@ export class EmbeddingService {
   private provider: EmbeddingProvider;
   private fallbackProvider?: EmbeddingProvider;
 
-  constructor(provider: EmbeddingProvider, fallbackProvider?: EmbeddingProvider) {
+  constructor(
+    provider: EmbeddingProvider,
+    fallbackProvider?: EmbeddingProvider
+  ) {
     this.provider = provider;
     this.fallbackProvider = fallbackProvider;
   }
@@ -86,7 +106,7 @@ export class EmbeddingService {
       return await this.provider.generateEmbeddings(text);
     } catch (error) {
       if (this.fallbackProvider) {
-        console.error('Primary provider failed, trying fallback provider...');
+        console.error("Primary provider failed, trying fallback provider...");
         return this.fallbackProvider.generateEmbeddings(text);
       }
       throw error;
@@ -98,10 +118,10 @@ export class EmbeddingService {
   }
 
   static createFromConfig(config: {
-    provider: 'ollama' | 'openai';
+    provider: "ollama" | "openai";
     apiKey?: string;
     model?: string;
-    fallbackProvider?: 'ollama' | 'openai';
+    fallbackProvider?: "ollama" | "openai";
     fallbackApiKey?: string;
     fallbackModel?: string;
   }): EmbeddingService {
@@ -124,18 +144,18 @@ export class EmbeddingService {
   }
 
   private static createProvider(
-    provider: 'ollama' | 'openai',
+    provider: "ollama" | "openai",
     apiKey?: string,
     model?: string
   ): EmbeddingProvider {
     switch (provider) {
-      case 'ollama':
+      case "ollama":
         return new OllamaProvider(model);
-      case 'openai':
+      case "openai":
         if (!apiKey) {
           throw new McpError(
             ErrorCode.InvalidParams,
-            'OpenAI API key is required'
+            "OpenAI API key is required"
           );
         }
         return new OpenAIProvider(apiKey, model);
