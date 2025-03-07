@@ -36,6 +36,11 @@ class RagDocsServer {
       await this.cleanup();
       process.exit(0);
     });
+
+    process.on("SIGTERM", async () => {
+      await this.cleanup();
+      process.exit(0);
+    });
   }
 
   private async cleanup() {
