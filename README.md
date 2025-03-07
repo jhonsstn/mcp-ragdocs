@@ -1,4 +1,5 @@
 # RAG Documentation MCP Server
+
 [![smithery badge](https://smithery.ai/badge/@rahulretnan/mcp-ragdocs)](https://smithery.ai/server/@rahulretnan/mcp-ragdocs)
 
 An MCP server implementation that provides tools for retrieving and processing documentation through vector search, enabling AI assistants to augment their responses with relevant documentation context.
@@ -7,13 +8,12 @@ An MCP server implementation that provides tools for retrieving and processing d
 
 - [Features](#features)
 - [Quick Start](#quick-start)
-- [Docker Compose Setup](#docker-compose-setup)
-- [Web Interface](#web-interface)
 - [Configuration](#configuration)
-  - [Cline Configuration](#cline-configuration)
-  - [Claude Desktop Configuration](#claude-desktop-configuration)
+  - [Environment Variables](#environment-variables)
+  - [Docker Compose Setup](#docker-compose-setup)
+  - [MCP Server Configuration](#mcp-server-configuration)
+- [Web Interface](#web-interface)
 - [Acknowledgments](#acknowledgments)
-- [Troubleshooting](#troubleshooting)
 
 ## Features
 
@@ -68,7 +68,18 @@ The RAG Documentation tool is designed for:
 - Implementing semantic documentation search
 - Augmenting existing knowledge bases
 
-## Docker Compose Setup
+## Configuration
+
+### Environment Variables
+
+The system uses environment variables for configuration. Create a `.env` file based on the provided `.env.example` file:
+
+```
+QDRANT_STORAGE=~/.qdrant/storage
+OLLAMA_MODELS=~/.ollama
+```
+
+### Docker Compose Setup
 
 The project includes a `docker-compose.yml` file for easy containerized deployment. To start the services:
 
@@ -82,9 +93,45 @@ To stop the services:
 docker-compose down
 ```
 
+After starting the services, you need to pull the embedding model:
+
+```bash
+docker exec ollama ollama pull nomic-embed-text
+```
+
+### MCP Server Configuration
+
+Add this to your `cline_mcp_settings.json`:
+
+```json
+{
+  "mcpServers": {
+    "rag-docs": {
+      "command": "docker",
+      "args": [
+        "run",
+        "--rm",
+        "-i",
+        "-p",
+        "3030:3030",
+        "-e",
+        "QDRANT_URL=http://qdrant:6333",
+        "-e",
+        "OLLAMA_HOST=http://ollama:11434",
+        "--network",
+        "ragdocs_network",
+        "ragdocs"
+      ],
+      "disabled": false,
+      "alwaysAllow": []
+    }
+  }
+}
+```
+
 ## Web Interface
 
-The system includes a web interface that can be accessed after starting the Docker Compose services:
+The system includes a web interface that can be accessed when the MCP server is running through RooCode, Cline, Claude or any mcp server client:
 
 1. Open your browser and navigate to: `http://localhost:3030`
 2. The interface provides:
@@ -93,128 +140,8 @@ The system includes a web interface that can be accessed after starting the Dock
    - Search interface for testing queries
    - System status and health checks
 
-## Configuration
-
-### Embeddings Configuration
-
-The system uses Ollama as the default embedding provider for local embeddings generation, with OpenAI available as a fallback option. This setup prioritizes local processing while maintaining reliability through cloud-based fallback.
-
-#### Environment Variables
-
-- `EMBEDDING_PROVIDER`: Choose the primary embedding provider ('ollama' or 'openai', default: 'ollama')
-- `EMBEDDING_MODEL`: Specify the model to use (optional)
-  - For OpenAI: defaults to 'text-embedding-3-small'
-  - For Ollama: defaults to 'nomic-embed-text'
-- `OPENAI_API_KEY`: Required when using OpenAI as provider
-- `FALLBACK_PROVIDER`: Optional backup provider ('ollama' or 'openai')
-- `FALLBACK_MODEL`: Optional model for fallback provider
-
-### Cline Configuration
-
-Add this to your `cline_mcp_settings.json`:
-
-```json
-{
-  "mcpServers": {
-    "rag-docs": {
-      "command": "node",
-      "args": ["/path/to/your/mcp-ragdocs/build/index.js"],
-      "env": {
-        "EMBEDDING_PROVIDER": "ollama", // default
-        "EMBEDDING_MODEL": "nomic-embed-text", // optional
-        "OPENAI_API_KEY": "your-api-key-here", // required for fallback
-        "FALLBACK_PROVIDER": "openai", // recommended for reliability
-        "FALLBACK_MODEL": "nomic-embed-text", // optional
-        "QDRANT_URL": "http://localhost:6333"
-      },
-      "disabled": false,
-      "autoApprove": [
-        "search_documentation",
-        "list_sources",
-        "extract_urls",
-        "remove_documentation",
-        "list_queue",
-        "run_queue",
-        "clear_queue",
-        "add_documentation"
-      ]
-    }
-  }
-}
-```
-
-### Claude Desktop Configuration
-
-Add this to your `claude_desktop_config.json`:
-
-```json
-{
-  "mcpServers": {
-    "rag-docs": {
-      "command": "node",
-      "args": ["/path/to/your/mcp-ragdocs/build/index.js"],
-      "env": {
-        "EMBEDDING_PROVIDER": "ollama", // default
-        "EMBEDDING_MODEL": "nomic-embed-text", // optional
-        "OPENAI_API_KEY": "your-api-key-here", // required for fallback
-        "FALLBACK_PROVIDER": "openai", // recommended for reliability
-        "FALLBACK_MODEL": "nomic-embed-text", // optional
-        "QDRANT_URL": "http://localhost:6333"
-      }
-    }
-  }
-}
-```
-
-### Default Configuration
-
-The system uses Ollama by default for efficient local embedding generation. For optimal reliability:
-
-1. Install and run Ollama locally
-2. Configure OpenAI as fallback (recommended):
-   ```json
-   {
-     // Ollama is used by default, no need to specify EMBEDDING_PROVIDER
-     "EMBEDDING_MODEL": "nomic-embed-text", // optional
-     "FALLBACK_PROVIDER": "openai",
-     "FALLBACK_MODEL": "text-embedding-3-small",
-     "OPENAI_API_KEY": "your-api-key-here"
-   }
-   ```
-
-This configuration ensures:
-- Fast, local embedding generation with Ollama
-- Automatic fallback to OpenAI if Ollama fails
-- No external API calls unless necessary
-
-Note: The system will automatically use the appropriate vector dimensions based on the provider:
-- Ollama (nomic-embed-text): 768 dimensions
-- OpenAI (text-embedding-3-small): 1536 dimensions
-
 ## Acknowledgments
 
 This project is a fork of [qpd-v/mcp-ragdocs](https://github.com/qpd-v/mcp-ragdocs), originally developed by qpd-v. The original project provided the foundation for this implementation.
 
 Special thanks to the original creator, qpd-v, for their innovative work on the initial version of this MCP server. This fork has been enhanced with additional features and improvements by Rahul Retnan.
-
-## Troubleshooting
-
-### Server Not Starting (Port Conflict)
-
-If the MCP server fails to start due to a port conflict, follow these steps:
-
-1. Identify and kill the process using port 3030:
-
-```bash
-npx kill-port 3030
-```
-
-2. Restart the MCP server
-
-3. If the issue persists, check for other processes using the port:
-
-```bash
-lsof -i :3030
-```
-
-4. You can also change the default port in the configuration if needed
