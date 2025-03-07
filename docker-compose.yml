@@ -30,7 +30,7 @@ services:
     ports:
       - "11434:11434"
     volumes:
-      - ~/.ollama/models:/root/.ollama/models:rw
+      - ~/.ollama:/root/.ollama
     networks:
       - ragdocs_network
     deploy:
