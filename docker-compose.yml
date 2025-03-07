@@ -1,4 +1,9 @@
 services:
+
+  ragdocs:
+    build: .
+    image: ragdocs
+    container_name: ragdocs
   qdrant:
     image: qdrant/qdrant:latest
     container_name: qdrant
@@ -16,12 +21,7 @@ services:
       timeout: 10s
       retries: 3
     networks:
-      - ollama_network
-
-  ragdocs:
-    build: .
-    image: ragdocs
-    container_name: ragdocs
+      - ragdocs_network
 
   ollama:
     image: ollama/ollama
@@ -32,7 +32,7 @@ services:
     volumes:
       - ~/.ollama/models:/root/.ollama/models:rw
     networks:
-      - ollama_network
+      - ragdocs_network
     deploy:
       resources:
         reservations:
@@ -40,5 +40,5 @@ services:
             - capabilities: [ gpu ]
 
 networks:
-  ollama_network:
+  ragdocs_network:
     driver: bridge
