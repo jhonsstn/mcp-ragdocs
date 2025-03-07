@@ -12,7 +12,7 @@ services:
       - "6333:6333" # REST API
       - "6334:6334" # GRPC API
     volumes:
-      - ~/.qdrant/storage:/qdrant/storage
+      - ${QDRANT_STORAGE:-~/.qdrant/storage}:/qdrant/storage
     environment:
       - QDRANT_ALLOW_RECOVERY=true
     healthcheck:
@@ -30,7 +30,7 @@ services:
     ports:
       - "11434:11434"
     volumes:
-      - ~/.ollama:/root/.ollama
+      - ${OLLAMA_VOLUME:-~/.ollama}:/root/.ollama
     networks:
       - ragdocs_network
     deploy:
