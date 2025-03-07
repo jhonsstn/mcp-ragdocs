@@ -13,11 +13,8 @@ RUN npm install
 # Build the application
 RUN npm run build
 
-# Install Playwright version 1.50.1 with system dependencies
-RUN npx -y playwright@1.50.1 install --with-deps
-
-# Install Playwright browsers
-RUN npx -y playwright install
+# Install Playwright with dependencies
+RUN npx -y playwright install --with-deps
 
 # Set the command to run when the container starts
 ENTRYPOINT ["node", "build/index.js"]
